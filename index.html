@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SzemTréner Pro v3.2</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --panel-bg: #1e1e1e;
+            --accent-color: #007aff;
+            --text-color: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow: hidden;
+            height: 100vh;
+            height: 100dvh; 
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            transition: background-color 0.1s;
+        }
+
+        body.warning {
+            background-color: #800000 !important;
+        }
+
+        #exercise-area {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            z-index: 1;
+        }
+
+        .tunnel-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 2px dashed rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            display: none;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        #target, #target-static-near {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2;
+            will-change: width, height, left, top, opacity, font-size;
+            text-align: center;
+            line-height: 1;
+        }
+
+        .dot-base {
+            background-color: #ff3b30 !important;
+            border-radius: 50% !important;
+            box-shadow: 0 0 25px #ff3b30 !important;
+            opacity: 1 !important;
+        }
+
+        .dimmed {
+            background-color: #2c2c2e !important;
+            box-shadow: none !important;
+            opacity: 0.15 !important;
+        }
+
+        #control-panel {
+            position: relative;
+            z-index: 10;
+            background-color: var(--panel-bg);
+            width: 94%;
+            max-width: 460px;
+            padding: 24px 20px;
+            border-radius: 24px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+        }
+
+        #control-panel.hidden {
+            opacity: 0 !important;
+            transform: scale(0.8);
+            pointer-events: none;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            text-align: center;
+            color: var(--accent-color);
+            margin-bottom: 2px;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.1rem;
+            min-height: 44px;
+        }
+
+        .row label {
+            width: 38%;
+            padding-right: 5px;
+            word-wrap: break-word;
+        }
+
+        select, input[type="range"] {
+            background: #2c2c2e;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            width: 60%;
+            font-size: 1.05rem;
+            height: 46px;
+        }
+
+        select {
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='white' d='M0 0l5 5 5-5z'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 30px;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            height: 8px;
+            padding: 0;
+            background: #2c2c2e;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            cursor: pointer;
+        }
+
+        .btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 14px;
+            font-size: 1.25rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            margin-top: 5px;
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+        }
+
+        #timer-display {
+            font-size: 2.2rem;
+            text-align: center;
+            font-weight: bold;
+            font-family: monospace;
+            margin-bottom: -5px;
+            color: #ffffff;
+        }
+
+        #sensor-info {
+            font-size: 0.95rem;
+            text-align: center;
+            color: #8e8e93;
+            background: #000;
+            padding: 10px;
+            border-radius: 12px;
+        }
+
+        #status-text {
+            font-weight: bold;
+            color: #ff3b30;
+        }
+
+        #version-tag {
+            font-size: 0.8rem;
+            text-align: center;
+            color: #555559;
+            margin-top: -8px;
+            margin-bottom: 2px;
+        }
+
+        input[type="checkbox"] {
+            width: 26px !important;
+            height: 26px !important;
+            accent-color: var(--accent-color);
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="exercise-area">
+        <div class="tunnel-ring" style="width: 85vw; height: 85vw; max-width: 340px; max-height: 340px;"></div>
+        <div class="tunnel-ring" style="width: 60vw; height: 60vw; max-width: 240px; max-height: 240px;"></div>
+        <div class="tunnel-ring" style="width: 35vw; height: 35vw; max-width: 140px; max-height: 140px;"></div>
+        <div class="tunnel-ring" style="width: 12vw; height: 12vw; max-width: 48px; max-height: 48px;"></div>
+        
+        <div id="target"></div>
+        <div id="target-static-near"></div>
+    </div>
+
+    <div id="control-panel">
+        <h1>SzemTréner Pro</h1>
+        <div id="version-tag">v3.2</div>
+        
+        <div id="timer-display">01:00</div>
+
+        <div class="row">
+            <label for="pattern-select">Mód:</label>
+            <select id="pattern-select">
+                <option value="horizontal">Jobbra - Balra</option>
+                <option value="vertical">Fel - Le</option>
+                <option value="diagonal-1">Átlós (Bal fel - Jobb le)</option>
+                <option value="diagonal-2">Átlós (Jobb fel - Bal le)</option>
+                <option value="circle">Körbe-körbe</option>
+                <option value="random">Véletlenszerű ugrálás ⚡</option>
+                <option value="depth-trumpet">Fókusz: Trombita 🎺</option>
+                <option value="depth-switcher">Fókusz: Váltó 🎚️</option>
+                <option value="depth-strobe">Fókusz: Sztroboszkóp ⚡</option>
+                <option value="mixer">Mód-Mixer (10mp váltás) 🎲</option>
+            </select>
+        </div>
+
+        <div class="row">
+            <label for="target-select">Célpont:</label>
+            <select id="target-select">
+                <option value="dot">🔴 Piros pötty</option>
+                <option value="pencil">✏️ Ceruza</option>
+                <option value="star">⭐ Csillag</option>
+                <option value="bug">🐞 Bogár</option>
+            </select>
+        </div>
+
+        <div class="row">
+            <label for="speed-slider">Sebesség:</label>
+            <input type="range" id="speed-slider" min="1" max="10" value="4">
+        </div>
+
+        <div class="row">
+            <label for="random-speed-toggle">Véletlen sebesség:</label>
+            <input type="checkbox" id="random-speed-toggle">
+        </div>
+
+        <div class="row">
+            <label for="duration-select">Időtartam:</label>
+            <select id="duration-select">
+                <option value="30">30 mp</option>
+                <option value="60" selected>1 perc</option>
+                <option value="120">2 perc</option>
+                <option value="300">5 perc</option>
+            </select>
+        </div>
+
+        <div class="row">
+            <label for="sensor-toggle">Stabilitás figyelő:</label>
+            <input type="checkbox" id="sensor-toggle" checked>
+        </div>
+
+        <div id="sensor-info">
+            Szenzor státusz: <span id="status-text">Inaktív</span>
+        </div>
+
+        <button id="start-btn" class="btn">Gyakorlat Indítása</button>
+    </div>
+
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(freq, duration) {
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.frequency.value = freq;
+            gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + duration);
+        }
+
+        const target = document.getElementById('target');
+        const targetNear = document.getElementById('target-static-near');
+        const startBtn = document.getElementById('start-btn');
+        const controlPanel = document.getElementById('control-panel');
+        const timerDisplay = document.getElementById('timer-display');
+        const patternSelect = document.getElementById('pattern-select');
+        const targetSelect = document.getElementById('target-select');
+        const speedSlider = document.getElementById('speed-slider');
+        const randomSpeedToggle = document.getElementById('random-speed-toggle'); 
+        const durationSelect = document.getElementById('duration-select');
+        const sensorToggle = document.getElementById('sensor-toggle');
+        const exerciseArea = document.getElementById('exercise-area');
+        const statusText = document.getElementById('status-text');
+        const tunnelRings = document.querySelectorAll('.tunnel-ring');
+
+        let isRunning = false;
+        let animationFrameId;
+        let timerInterval;
+        let startTime;
+        let duration;
+        let angle = 0;
+
+        let totalTicks = 0;
+        let warningTicks = 0;
+        let lastRandomJump = 0;
+        let lastSwitchTime = 0;
+        let currentActiveTarget = 'far'; 
+
+        let dynamicSpeedMultiplier = 1.0; 
+        let targetSpeedMultiplier = 1.0;
+        let lastSpeedChangeTime = 0;
+
+        let lastMixerChangeTime = 0;
+        let currentMixedMode = 'horizontal';
+        const mixableModes = [
+            'horizontal', 'vertical', 'diagonal-1', 'diagonal-2', 
+            'circle', 'random', 'depth-trumpet', 'depth-switcher', 'depth-strobe'
+        ];
+
+        let baselineX = null, baselineY = null;
+        const SENSOR_THRESHOLD = 0.8; 
+
+        function setupStaticText() {
+            const type = targetSelect.value;
+            let htmlContent = '';
+            
+            if (type === 'pencil') htmlContent = '✏️';
+            else if (type === 'star') htmlContent = '⭐';
+            else if (type === 'bug') htmlContent = '🐞';
+            
+            target.innerHTML = htmlContent;
+            targetNear.innerHTML = htmlContent;
+        }
+
+        function applyStyleClasses(element, isDimmed) {
+            element.className = ''; 
+            if (isDimmed) {
+                element.classList.add('dimmed');
+            } else {
+                element.classList.add('dot-base');
+            }
+        }
+
+        function updateTargetLook() {
+            setupStaticText();
+            applyStyleClasses(target, false);
+            applyStyleClasses(targetNear, false);
+        }
+        targetSelect.addEventListener('change', updateTargetLook);
+
+        // Időtartam választó figyelése a kijelző frissítéséhez
+        durationSelect.addEventListener('change', () => {
+            const selectedDuration = parseInt(durationSelect.value);
+            const mins = Math.floor(selectedDuration / 60).toString().padStart(2, '0');
+            const secs = (selectedDuration % 60).toString().padStart(2, '0');
+            timerDisplay.textContent = `${mins}:${secs}`;
+        });
+
+        async function initSensors() {
+            if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+                try {
+                    const permissionState = await DeviceMotionEvent.requestPermission();
+                    if (permissionState === 'granted') {
+                        window.removeEventListener('devicemotion', handleMotion);
+                        window.addEventListener('devicemotion', handleMotion);
+                        statusText.textContent = "Aktív ✔";
+                        statusText.style.color = "#4cd964";
+                    } else {
+                        statusText.textContent = "Megtagadva ❌";
+                    }
+                } catch (error) {
+                    statusText.textContent = "Hiba";
+                }
+            } else {
+                window.removeEventListener('devicemotion', handleMotion);
+                window.addEventListener('devicemotion', handleMotion);
+                statusText.textContent = "Aktív ✔";
+                statusText.style.color = "#4cd964";
+            }
+        }
+
+        function handleMotion(event) {
+            const accX = event.accelerationIncludingGravity.x || 0;
+            const accY = event.accelerationIncludingGravity.y || 0;
+
+            if (!isRunning || !sensorToggle.checked) return;
+
+            totalTicks++;
+
+            if (baselineX === null) {
+                baselineX = accX;
+                baselineY = accY;
+                return;
+            }
+
+            const diffX = Math.abs(accX - baselineX);
+            const diffY = Math.abs(accY - baselineY);
+
+            if (diffX > SENSOR_THRESHOLD || diffY > SENSOR_THRESHOLD) {
+                document.body.classList.add('warning');
+                warningTicks++;
+                if (navigator.vibrate) navigator.vibrate(60); 
+                if (Math.random() < 0.08) playSound(100, 0.04); 
+            } else {
+                document.body.classList.remove('warning');
+            }
+        }
+
+        let randomX = window.innerWidth / 2;
+        let randomY = window.innerHeight / 2;
+
+        function animate() {
+            if (!isRunning) return;
+
+            const speedValue = parseFloat(speedSlider.value);
+            const now = Date.now();
+
+            if (randomSpeedToggle.checked) {
+                if (now - lastSpeedChangeTime > 800) {
+                    targetSpeedMultiplier = 0.5 + Math.random(); 
+                    lastSpeedChangeTime = now;
+                }
+                dynamicSpeedMultiplier += (targetSpeedMultiplier - dynamicSpeedMultiplier) * 0.05;
+            } else {
+                dynamicSpeedMultiplier = 1.0;
+            }
+
+            const speed = speedValue * 0.015 * dynamicSpeedMultiplier;
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            
+            const marginX = 25; 
+            const marginY = 40; 
+
+            angle += speed;
+
+            let posX = width / 2;
+            let posY = height / 2;
+            let size = 40;
+            let sizeNear = 320; 
+
+            let mode = patternSelect.value;
+            if (mode === 'mixer') {
+                if (now - lastMixerChangeTime > 10000) {
+                    let availableModes = mixableModes.filter(m => m !== currentMixedMode);
+                    currentMixedMode = availableModes[Math.floor(Math.random() * availableModes.length)];
+                    lastMixerChangeTime = now;
+                    
+                    playSound(587.33, 0.1); 
+
+                    if (currentMixedMode.startsWith('depth')) {
+                        tunnelRings.forEach(ring => ring.style.display = 'block');
+                    } else {
+                        tunnelRings.forEach(ring => ring.style.display = 'none');
+                    }
+                }
+                mode = currentMixedMode; 
+            }
+
+            target.style.opacity = '1';
+            if (mode !== 'depth-switcher') {
+                targetNear.style.display = 'none';
+                applyStyleClasses(target, false);
+            }
+
+            if (mode === 'horizontal') {
+                posX = width / 2 + Math.sin(angle) * (width / 2 - marginX);
+            } 
+            else if (mode === 'vertical') {
+                posY = height / 2 + Math.sin(angle) * (height / 2 - marginY);
+            } 
+            else if (mode === 'diagonal-1') {
+                posX = width / 2 + Math.sin(angle) * (width / 2 - marginX);
+                posY = height / 2 + Math.sin(angle) * (height / 2 - marginY);
+            } 
+            else if (mode === 'diagonal-2') {
+                posX = width / 2 - Math.sin(angle) * (width / 2 - marginX);
+                posY = height / 2 + Math.sin(angle) * (height / 2 - marginY);
+            } 
+            else if (mode === 'circle') {
+                const radiusX = width / 2 - marginX;
+                const radiusY = height / 2 - marginY;
+                posX = width / 2 + Math.cos(angle) * radiusX;
+                posY = height / 2 + Math.sin(angle) * radiusY;
+            } 
+            else if (mode === 'random') {
+                const jumpInterval = Math.max(400, 2000 - ((speedValue * dynamicSpeedMultiplier) * 170)); 
+                if (now - lastRandomJump > jumpInterval) {
+                    randomX = marginX + Math.random() * (width - (marginX * 2));
+                    randomY = marginY + Math.random() * (height - (marginY * 2));
+                    lastRandomJump = now;
+                    playSound(400, 0.03); 
+                }
+                posX = randomX;
+                posY = randomY;
+            }
+            else if (mode === 'depth-trumpet') {
+                const sinWave = Math.sin(angle);
+                posX = width / 2;
+                posY = (height / 2) + sinWave * (height / 2 - marginY);
+                size = 10 + (sinWave + 1) * 155; 
+            }
+            else if (mode === 'depth-switcher') {
+                const switchInterval = Math.max(400, 2500 - ((speedValue * dynamicSpeedMultiplier) * 220));
+
+                if (now - lastSwitchTime > switchInterval) {
+                    currentActiveTarget = (currentActiveTarget === 'far') ? 'near' : 'far';
+                    lastSwitchTime = now;
+                    playSound(currentActiveTarget === 'far' ? 500 : 350, 0.04);
+                }
+
+                posX = width / 2;
+                posY = height * 0.25;
+                size = 20;
+
+                targetNear.style.display = 'flex';
+                targetNear.style.left = `${width / 2}px`;
+                targetNear.style.top = `${height * 0.75}px`;
+                targetNear.style.width = `${sizeNear}px`;
+                targetNear.style.height = `${sizeNear}px`;
+
+                if (currentActiveTarget === 'far') {
+                    applyStyleClasses(target, false);
+                    applyStyleClasses(targetNear, true);
+                } else {
+                    applyStyleClasses(target, true);
+                    applyStyleClasses(targetNear, false);
+                }
+            }
+            else if (mode === 'depth-strobe') {
+                size = 8 + (Math.sin(angle) + 1) * 156;
+                const isVisible = Math.floor(angle * 5) % 2 === 0;
+                target.style.opacity = isVisible ? '1' : '0';
+            }
+
+            const type = targetSelect.value;
+            const multiplier = (type === 'dot') ? 1 : 0.62; 
+            
+            target.style.fontSize = `${size * multiplier}px`;
+            if (mode === 'depth-switcher') {
+                targetNear.style.fontSize = `${sizeNear * multiplier}px`;
+            }
+
+            target.style.left = `${posX}px`;
+            target.style.top = `${posY}px`;
+            target.style.width = `${size}px`;
+            target.style.height = `${size}px`;
+
+            animationFrameId = requestAnimationFrame(animate);
+        }
+
+        function updateTimer() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const remaining = duration - elapsed;
+
+            if (remaining <= 0) {
+                stopExercise(true);
+            } else {
+                const mins = Math.floor(remaining / 60).toString().padStart(2, '0');
+                const secs = (remaining % 60).toString().padStart(2, '0');
+                timerDisplay.textContent = `${mins}:${secs}`;
+            }
+        }
+
+        function startExercise(e) {
+            e.stopPropagation(); 
+            e.preventDefault();
+
+            initSensors();
+            
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            isRunning = true;
+            baselineX = null;
+            baselineY = null;
+            lastRandomJump = 0;
+            lastSwitchTime = Date.now();
+            lastSpeedChangeTime = Date.now(); 
+            dynamicSpeedMultiplier = 1.0;      
+            targetSpeedMultiplier = 1.0;       
+            totalTicks = 0;
+            warningTicks = 0;
+
+            lastMixerChangeTime = Date.now();
+            currentMixedMode = mixableModes[Math.floor(Math.random() * mixableModes.length)];
+            
+            controlPanel.classList.add('hidden'); 
+            target.style.display = 'flex';
+            updateTargetLook();
+
+            const currentActiveMode = patternSelect.value === 'mixer' ? currentMixedMode : patternSelect.value;
+            if (currentActiveMode.startsWith('depth')) {
+                tunnelRings.forEach(ring => ring.style.display = 'block');
+            }
+
+            duration = parseInt(durationSelect.value);
+            startTime = Date.now();
+            angle = 0;
+
+            timerInterval = setInterval(updateTimer, 1000);
+            animate();
+            
+            playSound(523.25, 0.2);
+        }
+
+        function stopExercise(success = false) {
+            isRunning = false;
+            cancelAnimationFrame(animationFrameId);
+            clearInterval(timerInterval);
+            
+            controlPanel.classList.remove('hidden');
+            target.style.display = 'none';
+            targetNear.style.display = 'none';
+            document.body.classList.remove('warning');
+            target.style.opacity = '1';
+
+            tunnelRings.forEach(ring => ring.style.display = 'none');
+
+            const selectedDuration = parseInt(durationSelect.value);
+            const mins = Math.floor(selectedDuration / 60).toString().padStart(2, '0');
+            const secs = (selectedDuration % 60).toString().padStart(2, '0');
+            timerDisplay.textContent = `${mins}:${secs}`;
+
+            if (success) {
+                playSound(523.25, 0.15);
+                setTimeout(() => playSound(659.25, 0.3), 150);
+                
+                let motionPercentage = 0;
+                if(totalTicks > 0) {
+                    motionPercentage = Math.round((warningTicks / totalTicks) * 100);
+                }
+
+                let reportMessage = `🏁 Gyakorlat vége!\n\n`;
+                
+                if(sensorToggle.checked) {
+                    reportMessage += `Fej/Telefon mozgás: ${motionPercentage}%\n`;
+                    if(motionPercentage > 10) {
+                        reportMessage += `⚠️ Figyelem: Legközelebb próbáld jobban fixálni a fejed, csak a szemed mozogjon!\n`;
+                    } else {
+                        reportMessage += `💪 Kiváló! Sikerült stabilan tartani a fejed.\n`;
+                    }
+                }
+
+                alert(reportMessage);
+            } else {
+                playSound(220, 0.3);
+            }
+        }
+
+        startBtn.addEventListener('click', startExercise);
+
+        exerciseArea.addEventListener('click', (e) => {
+            if (isRunning) {
+                stopExercise(false);
+            }
+        });
+
+        window.addEventListener('touchstart', () => {
+            if(!isRunning) initSensors();
+        }, {once: true});
+    </script>
+</body>
+</html>
